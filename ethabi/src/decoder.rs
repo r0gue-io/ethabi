@@ -10,7 +10,7 @@
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-use crate::{Error, ParamType, Token, Word};
+use crate::{Error, Int, ParamType, Token, Uint, Word};
 
 #[derive(Debug)]
 struct DecodeResult {
@@ -131,12 +131,12 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 		}
 		ParamType::Int(_) => {
 			let slice = peek_32_bytes(data, offset)?;
-			let result = DecodeResult { token: Token::Int(slice.into()), new_offset: offset + 32 };
+			let result = DecodeResult { token: Token::Int(Int::from_big_endian(&slice)), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Uint(_) => {
 			let slice = peek_32_bytes(data, offset)?;
-			let result = DecodeResult { token: Token::Uint(slice.into()), new_offset: offset + 32 };
+			let result = DecodeResult { token: Token::Uint(Uint::from_big_endian(&slice)), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Bool => {

@@ -23,6 +23,7 @@ pub use token::Token;
 
 #[cfg(all(feature = "serde", not(feature = "std")))]
 use crate::no_std_prelude::*;
+use crate::{Uint, Int};
 #[cfg(feature = "serde")]
 use core::cmp::Ordering::{Equal, Less};
 
@@ -44,8 +45,16 @@ pub trait Tokenizer {
 			ParamType::FixedBytes(len) => {
 				Self::tokenize_fixed_bytes(value.strip_prefix("0x").unwrap_or(value), len).map(Token::FixedBytes)
 			}
-			ParamType::Uint(_) => Self::tokenize_uint(value).map(Into::into).map(Token::Uint),
-			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
+			ParamType::Uint(_) => Self::tokenize_uint(value).map(|b| {
+				let mut arr = [0u8; 32];
+				arr.copy_from_slice(&b);
+				Uint::from_big_endian(&arr)
+			}).map(Token::Uint),
+			ParamType::Int(_) => Self::tokenize_int(value).map(|b| {
+				let mut arr = [0u8; 32];
+				arr.copy_from_slice(&b);
+				Int::from_big_endian(&arr)
+			}).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
 			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
 			ParamType::Tuple(ref p) => Self::tokenize_struct(value, p).map(Token::Tuple),

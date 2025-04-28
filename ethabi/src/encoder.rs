@@ -164,8 +164,8 @@ fn encode_token_append(data: &mut Vec<Word>, token: &Token) {
 		Token::Bytes(ref bytes) => pad_bytes_append(data, bytes),
 		Token::String(ref s) => pad_bytes_append(data, s.as_bytes()),
 		Token::FixedBytes(ref bytes) => fixed_bytes_append(data, bytes),
-		Token::Int(int) => data.push(int.into()),
-		Token::Uint(uint) => data.push(uint.into()),
+		Token::Int(int) => data.push(int.to_big_endian()),
+		Token::Uint(uint) => data.push(uint.to_big_endian()),
 		Token::Bool(b) => {
 			let mut value = [0u8; 32];
 			if b {

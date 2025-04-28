@@ -71,10 +71,10 @@ impl Tokenizer for LenientTokenizer {
 						let integer = Uint::from_dec_str(integer)?.checked_mul(Uint::from(10u32).pow(units));
 
 						if fract.is_empty() {
-							integer.ok_or(dec_error)?
+							integer.ok_or::<Error>(dec_error.into())?
 						} else {
 							// makes sure we don't go beyond 18 decimals
-							let fract_pow = units.checked_sub(Uint::from(fract.len())).ok_or(dec_error)?;
+							let fract_pow = units.checked_sub(Uint::from(fract.len())).ok_or::<Error>(dec_error.into())?;
 
 							let fract = Uint::from_dec_str(fract)?
 								.checked_mul(Uint::from(10u32).pow(fract_pow))
@@ -90,7 +90,7 @@ impl Tokenizer for LenientTokenizer {
 			}
 		};
 
-		Ok(uint.into())
+		Ok(uint.to_big_endian())
 	}
 
 	// We don't have a proper signed int 256-bit long type, so here we're cheating. We build a U256
@@ -106,7 +106,7 @@ impl Tokenizer for LenientTokenizer {
 		let max = Uint::max_value() / 2;
 		let int = if value.starts_with('-') {
 			if abs.is_zero() {
-				return Ok(abs.into());
+				return Ok(abs.to_big_endian());
 			} else if abs > max + 1 {
 				return Err(Error::Other(Cow::Borrowed("int256 parse error: Underflow")));
 			}
@@ -117,7 +117,7 @@ impl Tokenizer for LenientTokenizer {
 			}
 			abs
 		};
-		Ok(int.into())
+		Ok(int.to_big_endian())
 	}
 }
 
@@ -250,5 +250,11 @@ mod tests {
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "g 1 gwei"), Err(_error)));
 
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1gwei 1 gwei"), Err(_error)));
+	}
+}
+
+impl From<ethereum_types::FromDecStrErr> for Error {
+	fn from(err: ethereum_types::FromDecStrErr) -> Self {
+		Error::Other(std::borrow::Cow::Owned(err.to_string()))
 	}
 }
